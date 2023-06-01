@@ -33,10 +33,11 @@ Eout.SB(Eout.Nb_Pair_SB+1).Input_Mod_index = Mod_index;
 Eout.Field = Eout.Field * besselj(0,Mod_index);
 
 % add the 2 sidebands field
-Eout.SB(Eout.Nb_Pair_SB+1).Field_lower = - Eout.Field * besselj(1,Mod_index);
-Eout.SB(Eout.Nb_Pair_SB+1).Field_upper = Eout.Field * besselj(1,Mod_index);
-
-% We have added one pair of sidebands
-Eout.Nb_Pair_SB = Eout.Nb_Pair_SB + 1;
+for i=1:Max_mod_order
+    % We are adding one pair of sidebands
+    Eout.Nb_Pair_SB = Eout.Nb_Pair_SB + 1;
+    Eout.SB(Eout.Nb_Pair_SB).Field_lower = - Eout.Field * besselj(i,Mod_index);
+    Eout.SB(Eout.Nb_Pair_SB).Field_upper = Eout.Field * besselj(i,Mod_index);
+end
 
 end

@@ -23,25 +23,41 @@ power_temp_Car = 0;
 power_temp_SB_lower = 0;
 power_temp_SB_upper = 0;
 
+% check if Ein is on the GPU, if yes do the calculations in the GPU
+
+if exist('isgpuarray','file') % to be compatible with version < 2020b
+    Run_on_GPU = isgpuarray(Ein.Field);
+else
+    Run_on_GPU = false;
+end
+
 if strcmp(p.Results.include,'carrier')
-    power_temp_Car = sum(sum(abs(Ein.Field).^2)) * (Ein.Grid.Step)^2;
+    if Run_on_GPU
+        power_temp_Car = sum(abs(arrayfun(@times,Ein.Field,Ein.Field) ),'all');
+    else
+        power_temp_Car = sum(abs(Ein.Field(:)).^2);
+    end
+    
+    power_temp_Car = power_temp_Car * Ein.Grid.Step_sq;
     power_temp_SB = 0;
+    
 elseif strcmp(p.Results.include,'all')
-    power_temp_Car = sum(sum(abs(Ein.Field).^2))* (Ein.Grid.Step)^2;
-    if Ein.Nb_Pair_SB        
+    power_temp_Car = sum(abs(Ein.Field(:).^2))* (Ein.Grid.Step)^2;
+    if Ein.Nb_Pair_SB
         for ii = 1:Ein.Nb_Pair_SB
-        power_temp_SB_lower = power_temp_SB_lower + sum(sum(abs(Ein.SB(ii).Field_lower).^2))* (Ein.Grid.Step)^2;
-        power_temp_SB_upper = power_temp_SB_upper + sum(sum(abs(Ein.SB(ii).Field_upper).^2))* (Ein.Grid.Step)^2;
+            power_temp_SB_lower = power_temp_SB_lower + sum(abs(Ein.SB(ii).Field_lower(:)).^2)* (Ein.Grid.Step)^2;
+            power_temp_SB_upper = power_temp_SB_upper + sum(abs(Ein.SB(ii).Field_upper(:)).^2)* (Ein.Grid.Step)^2;
         end
         
     end
+    
 elseif strcmp(p.Results.include,'SB')
     if Ein.Nb_Pair_SB
         if SB_number > Ein.Nb_Pair_SB
             error('Calculate_Power(): SB number invalid')
         end
-        power_temp_SB_lower =  sum(sum(abs(Ein.SB(SB_number).Field_lower).^2))* (Ein.Grid.Step)^2;
-        power_temp_SB_upper =  sum(sum(abs(Ein.SB(SB_number).Field_upper).^2))* (Ein.Grid.Step)^2;
+        power_temp_SB_lower =  sum(abs(Ein.SB(SB_number).Field_lower(:)).^2)* (Ein.Grid.Step)^2;
+        power_temp_SB_upper =  sum(abs(Ein.SB(SB_number).Field_upper(:)).^2)* (Ein.Grid.Step)^2;
     end
     power_temp_Car = 0;
 end

@@ -35,8 +35,6 @@ end
 
 Display_debug = false;
 
-% Define the overlap function:
-Raw_overlap = @(x,y) (sum(sum(conj(x).*y) ) );
 
 % The laser starts outside the input mirror, change n from 1 to mirror
 % substrate refractive index
@@ -46,6 +44,7 @@ if isa(Cin.I_input, 'Interface')
 else
     Field_in =  Cin.Laser_in;
 end
+
 [Field_in,Field_reflec] = Transmit_Reflect_Optic(Field_in,Cin.I_input,'AR');
 
 error_P = 1;
@@ -99,10 +98,10 @@ if ~E1.Nb_Pair_SB % if there is no SB
         
         c = M\A;
         
-        E2 = c(1)*E1 + c(2)*E_SR_2;
+        E2 = E1*c(1) + E_SR_2*c(2);
         
         % Calculate D2 now
-        D2 = E2 - ( c(1)*(E1 - D1) + c(2)*E_SR_2_circ );
+        D2 = E2 - ( (E1 - D1)*c(1) + E_SR_2_circ*c(2) );
         
         error_P = Calculate_Power(E2 - E1) / Calculate_Power(E1);
         
@@ -197,7 +196,7 @@ else
         
         for ii=1:E1.Nb_Pair_SB
             if error_P_LSB(ii) > Accuracy
-
+                
                 M(1,1) = Raw_overlap(D1.SB(ii).Field_lower,D1.SB(ii).Field_lower);
                 M(1,2) = Raw_overlap(D1.SB(ii).Field_lower,D_SR_2.SB(ii).Field_lower);
                 M(2,1) = conj( M(1,2) );
@@ -205,9 +204,10 @@ else
                 
                 A(1,1) = Raw_overlap(D1.SB(ii).Field_lower,Field_in.SB(ii).Field_lower);
                 A(2,1) = Raw_overlap(D_SR_2.SB(ii).Field_lower,Field_in.SB(ii).Field_lower);
-                %c = M\A;
                 
-                c = pinv(M) * A; % To avoid error message due to singular matrix                
+                %c = M\A;
+                c = pinv(M) * A; % To avoid error message due to singular matrix
+                
                 E2.SB(ii).Field_lower = c(1)*E1.SB(ii).Field_lower + c(2)*E_SR_2.SB(ii).Field_lower;
                 
                 % Calculate D2 now
@@ -216,7 +216,7 @@ else
                 
                 [pow_diff,~] = Calculate_Power(E2 - E1,'include','SB','SB_num',ii);
                 [pow_E1,~] = Calculate_Power(E1,'include','SB','SB_num',ii);
-
+                
                 error_P_LSB(ii) = pow_diff / pow_E1;
                 
                 E1.SB(ii).Field_lower = E2.SB(ii).Field_lower;
@@ -256,13 +256,13 @@ else
                 count_iter_USB(ii) = count_iter_USB(ii) + 1;
             else
                 error_P_USB(ii) = 0;
-            end      
+            end
         end
-                
+        
         error_P = max([error_P_carr error_P_LSB error_P_USB]);
     end
-%      count_iter_LSB(1)
-%      count_iter_USB(1)
+    %      count_iter_LSB(1)
+    %      count_iter_USB(1)
     
     Cout.Field_circ = E1;
     
@@ -274,9 +274,8 @@ else
 end
 
 %---------------------------------------------------------------------------------------------------------------------------------
-% Ok we got now the 3 circulating fields (carrier +  sidebands)
+% Ok we got now the 3 circulating fields (carrier + 2 sidebands)
 Field_temp = Propagate_E(Cout.Field_circ,Cin.Propagation_mat);
-
 Cout.Field_trans = Transmit_Reflect_Optic(Field_temp,Cin.I_end);
 
 Field_temp = Propagate_E(Cout.Field_circ,Cin.Propagation_mat);
@@ -315,5 +314,17 @@ field_tmp = Propagate_E(field_tmp,Cin.Propagation_mat);
 field_tmp = Reflect_Mirror(field_tmp,Cin.I_input,'Ref',1);
 
 Cout.Loss_RTL =  (1 - Calculate_Power(field_tmp));
+
+end
+
+% Define the overlap function:
+function overL = Raw_overlap(x,y)
+
+
+if exist('isgpuarray','file') && isgpuarray(x) && isgpuarray(y)
+    overL =   sum(arrayfun(@times,conj(x),y),'all');    
+else
+    overL =  sum(conj(x).*y,'all');
+end
 
 end

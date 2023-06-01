@@ -9,6 +9,7 @@ classdef Mirror
         
         RT_inside = 1;             % Number of round trip when the thick mirror is dealt as a cavity
         n_substrate
+		Propagation_mat_sub
     end
     
     properties (Dependent)
@@ -75,7 +76,7 @@ classdef Mirror
         end
         
         function value = get.T(obj)
-            value = obj.I_HR.T;
+            value = (obj.I_HR.t)^2;
         end
         
         function value = get.mask(obj)

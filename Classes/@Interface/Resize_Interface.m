@@ -1,4 +1,4 @@
-function Iout = Resize_interface(In,G2)
+function Iout = Resize_Interface(Iin,G2)
 % Iout = Resize_interface(In,G2) Create a new interface which Iin resampled
 % on the grid G2
 
@@ -11,23 +11,22 @@ p.addRequired('Iin', @(x)isa(x, 'Interface'));
 % Check if the  second argument is a grid
 p.addRequired('G2', @(x)isa(x, 'Grid'));
 
-p.parse(In,G2)
+p.parse(Iin,G2)
 
 Iout = Interface(G2);
 
+Iout.Grid = interp2(Iin.Grid.D2_X,Iin.Grid.D2_Y,Iin.surface,G2.D2_X,G2.D2_Y);
+Iout.mask = interp2(Iin.Grid.D2_X,Iin.Grid.D2_Y,Iin.mask,G2.D2_X,G2.D2_Y,'nearest');
 
+Iout.T = Iin.T;
+Iout.L = Iin.L;
 
+Iout.n1 = Iin.n1;
+Iout.n2 = Iin.n2;
 
+Iout.r = Iin.r;
+Iout.t = Iin.t;
 
-       Grid: [1x1 Grid]
-    surface: [742x742 double]
-       mask: [742x742 double]
-          T: 0.1000
-          L: 0
-         n1: 1
-         n2: 1.4500
-          t: 0 + 0.3162i
-          r: 0.9487
 
 
 

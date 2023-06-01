@@ -25,7 +25,7 @@ function Iout = Add_Map(Iin,map_loaded,varargin)
 %     Remove the tilt / piston from the map. The argument after is the
 %     diameter over which it is removed.
 %
-%     Iout = Add_map(Iin,filename,'reso',1E-3,'remove_tilt',0.150,'centering',[0.05 0.01])
+%     Iout = Add_map(Iin,filename,'reso',1E-3,'remove_tilt',0.150,'shift',[0.05 0.01])
 %     Center the map at the coordinates given (in m). The tilt/focus is
 %     removed on this new center. Rotation will happen after this
 %     centering.
@@ -91,6 +91,13 @@ end
 % Check if the matrix is square
 [m,n] = size(map.loaded);
 
+if n~=2 % so we do not have 2 columns, but we have a matrix
+    if (m~=n) % the map is not square, extract a cutted
+        map.loaded = Make_square(map.loaded);
+        disp('Add_Map(): the loaded map is made square')
+    end
+end
+
 if (m==n)     % The matrix is square
     
     % Rescale
@@ -120,8 +127,8 @@ if (m==n)     % The matrix is square
     map.offset_Y = round(p.Results.shift(2)/map.res);
     
     map.loaded = circshift(map.loaded,[-map.offset_Y map.offset_X]);
-    
-    %figure(2); imagesc(map.Grid_axis,map.Grid_axis,map.loaded); axis square
+    % just shift by an integer number of pixel.     
+    %figure(1); imagesc(map.Grid_axis,map.Grid_axis,map.loaded); axis square
     
     % If desired, remove the tilt
     if  ~isempty(p.Results.remove_tilt)
@@ -142,7 +149,7 @@ if (m==n)     % The matrix is square
         
         c0 = [0 0 0];
         
-        [map.fit_para,~,~,~,output] = lsqcurvefit(func_curv,c0,map.fit_grid,map.funcv,[],[],options);
+        [map.fit_para,~,~,~,~] = lsqcurvefit(func_curv,c0,map.fit_grid,map.funcv,[],[],options);
         
         if p.Results.verbose
             fprintf('Substracted horizontal tilt [nrad]: %g \n',map.fit_para(1)*1E9)
@@ -177,7 +184,7 @@ if (m==n)     % The matrix is square
         
         c0 = [0 0 0 1/2000];
         
-        [map.fit_para,~,~,~,output] = lsqcurvefit(func_curv,c0,map.fit_grid,map.funcv,[],[],options);
+        [map.fit_para,~,~,~,~] = lsqcurvefit(func_curv,c0,map.fit_grid,map.funcv,[],[],options);
         
         if p.Results.verbose
             fprintf('Substracted radius of curvature [m]: %g \n',1/(2*map.fit_para(4)))
@@ -198,7 +205,7 @@ if (m==n)     % The matrix is square
     edge_value = find_edge_value(map.loaded);
     %edge_value = -1.81E-8;
     % Resample the loaded map to the grid of the interface
-    map.resampled = interp2(map.Grid_X,map.Grid_Y,map.loaded,Iin.Grid.D2_X,Iin.Grid.D2_Y,'linear',edge_value);
+    map.resampled = interp2(map.Grid_X+p.Results.shift(1),map.Grid_Y-p.Results.shift(2),map.loaded,Iin.Grid.D2_X,Iin.Grid.D2_Y,'linear',edge_value);
     
 elseif (n==2)    % The matrix is a 2 vector column, first column radius, second column sagitta change
     map.resampled = interp1(map.loaded(:,1),map.loaded(:,2),sqrt(Iin.Grid.D2_X.^2 + Iin.Grid.D2_Y.^2),'linear',0);

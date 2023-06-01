@@ -26,7 +26,8 @@ Side_str = side;
 
 Eout = E1;
 Field_trans = Normalise_E(E1,'Power',0);
-%Calculate_Power(Field_trans,'include','SB')
+
+
 
 if strcmp(Side_str,'HR')
     % i phase shift induced only by the transmission on the HR surface
@@ -38,8 +39,9 @@ if strcmp(Side_str,'HR')
         Field_tmp = Propagate_E(Field_tmp,M.length_substrate); % From HR to AR
         [Field_tmp_trans, Field_tmp_ref] =  Transmit_Reflect_Interface(Field_tmp,M.I_AR);
         
+        %Calculate_power(Field_tmp_trans)
         %Field_trans = Field_trans + (-1i)*Field_tmp_trans;
-        Field_trans = Field_trans + Field_tmp_trans;
+        Field_trans = Field_trans + Field_tmp_trans;        
         
         Field_tmp = Propagate_E(Field_tmp_ref,M.length_substrate);
         [Field_tmp_trans, Field_tmp_ref] =  Transmit_Reflect_Interface(Field_tmp,M.I_HR);
@@ -54,10 +56,11 @@ else
     
     for qq =1:M.RT_inside
         Field_tmp =   Propagate_E(Field_tmp,M.length_substrate); % From AR to HR
-        
+             
         [Field_tmp_trans, Field_tmp_ref] =  Transmit_Reflect_Interface(Field_tmp,M.I_HR);
         %Field_trans = Field_trans + (-1i)*Field_tmp_trans;
         Field_trans = Field_trans + Field_tmp_trans;
+        
         Field_tmp = Propagate_E(Field_tmp_ref,M.length_substrate);
         [Field_tmp_trans, Field_tmp_ref] =  Transmit_Reflect_Interface(Field_tmp,M.I_AR);
         
@@ -76,7 +79,7 @@ switch nargout
         Eout  = Field_trans;
         varargout = {Field_ref};
         return
-        
+         
     otherwise
         error('Transmit_Reflect_Mirror(): Wrong number of output argument')
 end

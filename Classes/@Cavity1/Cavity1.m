@@ -13,6 +13,7 @@ classdef Cavity1
         Length
         Laser_in
         Laser_start_on_input = false;
+        Run_on_GPU = false;
         Resonance_phase = [];
         Cavity_scan_all_field = [];
         Cavity_scan_param = [1000 500 2E-9 1000]; % Number of points for the scan over one FSR, Number of points for the zoom, span of the zoom, max number of iteration (if the cavity is high finesse)
@@ -64,10 +65,13 @@ classdef Cavity1
                 % Check if the input laser is optimally mode matched    
                 if  C.Laser_in.Optimal_mode_matching
                     Beam_paramater = Check_Stability(C,'Display',false);
-                    New_input_field =  E_Field(Grid(C),'w',Beam_paramater(1),'R',Beam_paramater(2),'mode',C.Laser_in.Mode_name);
+                    if isempty(Beam_paramater)
+                         error('Cavity1(): please check that the cavity is stable to find the optimal input beam parameters')
+                    end
+                    New_input_field =  E_Field(Grid(C),'w',Beam_paramater(1),'R',Beam_paramater(2),'mode',C.Laser_in.Mode_name,'Wavelength',C.Laser_in.Wavelength);
                     % add the sidebands as it used to be
                     for ii = 1:C.Laser_in.Nb_Pair_SB
-                        New_input_field = Add_Sidebands(New_input_field,C.Laser_in.SB(ii).Frequency_Offset,C.Laser_in.SB(ii).Input_Mod_index);
+                        New_input_field = Add_Sidebands(New_input_field,'Mod_freq',C.Laser_in.SB(ii).Frequency_Offset,'Mod_depth',C.Laser_in.SB(ii).Input_Mod_index);
                     end
                     C.Laser_in = New_input_field;
                 end    
